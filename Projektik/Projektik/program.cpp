@@ -41,6 +41,7 @@ struct TransferRecord {
 	unsigned int CountryDestination;
 };
 
+typedef std::vector<std::string> tHeader;
 typedef std::vector<TransferRecord> tData;
 
 class CsvReader {
@@ -67,10 +68,22 @@ private: // this is just for information all members of classes are private by d
 		return value;
 	}
 
-	void parseHeader(std::istream& inData)
+	tHeader parseHeader(std::istream& inHeader)
 	{
-		// lets do somethink with header
-		return;
+		tHeader ret;
+		std::string line;
+		std::string cell;
+
+		std::getline(inHeader, line);
+		std::stringstream inLine(line);
+		TransferRecord row;
+		unsigned int colIdx{ TransferRecord::ColumnIndexes::enBYTES };
+
+		while (std::getline(inLine, cell, ';'))
+		{
+			ret.push_back(cell);
+		}
+		return ret;
 	}
 	TransferRecord parseLine(std::istream& inData)
 	{
@@ -188,7 +201,7 @@ private: // this is just for information all members of classes are private by d
 
 public:
 
-	bool loadFile(const std::string& filePath, std::vector<TransferRecord>& outputData)
+	bool loadFile(const std::string& filePath, std::vector<TransferRecord>& outputData, tHeader& outputHeader)
 	{
 		if (!fileExist(filePath))
 		{
@@ -213,11 +226,11 @@ public:
 		}
 				
 		std::string line;
-		// handle the header of the CSV file
+
 		if (std::getline(csvFile, line))
 		{
 			std::stringstream lineStream(line);
-			parseHeader(lineStream);
+			outputHeader = parseHeader(lineStream);
 		}
 
 		while (std::getline(csvFile, line))
@@ -254,6 +267,45 @@ public:
 	}
 };
 
+class DataPrinter {
+	void printData(tData data)
+	{
+		for (const auto& itm : data)
+		{
+			std::cout << itm.Bytes << "\t";
+			std::cout << itm.Flows << "\t";
+			std::cout << itm.BitsPerSecond << "\t";
+			std::cout << itm.PacketsPerSecond << "\t";
+			std::cout << itm.Packets << "\t";
+			std::cout << itm.IpSource << "\t";
+			std::cout << itm.IpDestination << "\t";
+			std::cout << itm.PortSource << "\t";
+			std::cout << itm.PortDestination << "\t";
+			std::cout << itm.StartTime << "\t";
+			std::cout << itm.EndTime << "\t";
+			std::cout << itm.Duration << "\t";
+			std::cout << itm.DnsQuestionCount << "\t";
+			std::cout << itm.CountrySource << "\t";
+			std::cout << itm.CountryDestination;
+			std::cout << std::endl;
+		}
+	}
+	void printHeader(tHeader header)
+	{
+		for (const auto& itm : header)
+		{
+			std::cout << itm << "\t";
+		}
+		std::cout << std::endl;
+	}
+public:
+	void print(const tHeader& header, const tData& data)
+	{
+		printHeader(header);
+		printData(data);
+	}
+};
+
 int main(int argc, char** argv)
 {
 	// Check if proper amount of arguments has been used by calling the application
@@ -272,8 +324,13 @@ int main(int argc, char** argv)
 	// Read data from the CSV file to the structure
 	CsvReader csvReader;
 	tData csvData;
-	csvReader.loadFile(filePath, csvData);
+	tHeader csvHeader;
+	csvReader.loadFile(filePath, csvData, csvHeader);
 	std::cout << "Read " << csvData.size() << " records form the file: " << filePath << std::endl;
+	
+	// Print the result which has been read form the input file
+	DataPrinter printer;
+	printer.print(csvHeader, csvData);
 
 	// Check the data for corectness
 	DataChecker dataChecker;

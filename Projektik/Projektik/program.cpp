@@ -41,13 +41,25 @@ struct TransferRecord {
 	unsigned int CountryDestination;
 };
 
+typedef std::vector<TransferRecord> tData;
+
 class CsvReader {
 
 private: // this is just for information all members of classes are private by default
 	unsigned int stringToInteger(std::string value)
 	{
 		// the handling here needs to be improved for case the value cannot be converted to integer
-		return std::stoi(value);
+		int ret{ 0 };
+		try {
+			ret = std::stoi(value);
+		}
+		catch (std::invalid_argument const& ex){
+			std::cout << "The value: " << value << " cannto be converted to integer (" << ex.what() << ")" << std::endl;
+		}
+		catch (std::out_of_range const& ex) {
+			std::cout << "The value " << value << " is out of range (" << ex.what() << ")" << std::endl;
+ 		}
+		return ret;
 	}
 	std::string stringToIp(std::string value)
 	{
@@ -94,6 +106,11 @@ private: // this is just for information all members of classes are private by d
 			case TransferRecord::ColumnIndexes::enPACKETS_PER_SECOND:
 			{
 				row.PacketsPerSecond = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enPACKETS:
+			{
+				row.Packets = stringToInteger(cell);
 				break;
 			}
 			case TransferRecord::ColumnIndexes::enIP_SOURCE:
@@ -214,25 +231,25 @@ public:
 	}
 };
 
-class DataVerifier {
-	enum class DataState {
-		enOK,
-		enDATA_INCOMPLETE,
-		enDATA_INVALID,
-	};
+class DataChecker {
+public:
+	bool checkMissingRecords(const tData& data) {
+		return true;
+	}
 };
 
 class DataAnalyzer {
-	unsigned int calcOneWayTransferInTime(int timeInterval) {
+public:
+	unsigned int calcOneWayTransferInTime(int timeInterval, const tData& data) {
 		return 0;
 	}
-	unsigned int calcTwoWaysTransferInTime(int timeInterval) {
+	unsigned int calcTwoWaysTransferInTime(int timeInterval, const tData& data) {
 		return 0;
 	}
-	unsigned int calcOneWayTransfer() {
+	unsigned int calcOneWayTransfer(const tData& data) {
 		return 0;
 	}
-	unsigned int calcTwoWaysTransfer(){
+	unsigned int calcTwoWaysTransfer(const tData& data) {
 		return 0;
 	}
 };
@@ -252,10 +269,22 @@ int main(int argc, char** argv)
 	std::string filePath{ argv[1] };
 	std::cout << "CSV file path: " << filePath << std::endl;
 	
+	// Read data from the CSV file to the structure
 	CsvReader csvReader;
-	std::vector<TransferRecord> csvData;
-
+	tData csvData;
 	csvReader.loadFile(filePath, csvData);
+	std::cout << "Read " << csvData.size() << " records form the file: " << filePath << std::endl;
+
+	// Check the data for corectness
+	DataChecker dataChecker;
+	bool areMissingRecords = false;
+	areMissingRecords = dataChecker.checkMissingRecords(csvData);
+	std::cout << "Missing records: " << areMissingRecords << std::endl;
+
+	// Analyse the data
+	DataAnalyzer dataAnalyzer;
+	int oneWayTime = dataAnalyzer.calcOneWayTransfer(csvData);
+	std::cout << "Calculated one way transfer time: " << oneWayTime << std::endl;
 
 	return 0;
 }

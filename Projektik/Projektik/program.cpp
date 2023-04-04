@@ -42,6 +42,11 @@ private: // this is just for information all members of classes are private by d
 		return std::stoi(value);
 	}
 
+	void parseHeader(std::istream& inData)
+	{
+		// lets do somethink with header
+		return;
+	}
 	TransferRecord parseLine(std::istream& inData)
 	{
 		std::string line;
@@ -121,26 +126,35 @@ public:
 			return false;
 		}
 
-		std::ifstream csvFile;
-		csvFile.open(filePath, std::ios::out);
+		std::fstream csvFile;
+		csvFile.open(filePath);
 
 		if (!csvFile.is_open())
 		{
 			std::cout << "The file: " << filePath << " cannot be open" << std::endl;
+			return false;
 		}
 
 		if (csvFile.fail())
 		{
 			std::cout << "The file: " << filePath << " faild by ipening" << std::endl;
+			csvFile.close();
+			return false;
+		}
+				
+		std::string line;
+		// handle the header of the CSV file
+		if (std::getline(csvFile, line))
+		{
+			std::stringstream lineStream(line);
+			parseHeader(lineStream);
 		}
 
-
-		std::string line;
 		while (std::getline(csvFile, line))
 		{
 			TransferRecord row;
-			std::stringstream line;
-			row = parseLine(line);
+			std::stringstream lineStream(line);
+			row = parseLine(lineStream);
 			outputData.push_back(row);
 		}
 		return true;

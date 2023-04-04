@@ -14,6 +14,14 @@ struct TransferRecord {
 		enPACKETS,
 		enIP_SOURCE,
 		enIP_DESTINATION,
+		enPORT_SOURCE,
+		enPORT_DESTINATION,
+		enSTART_TIME,
+		enEND_TIME,
+		enDURATION,
+		enDNS,
+		enSOURCE_COUNTRY,
+		enDESTINATION_COUNTRY,
 	};
 
 	unsigned int Bytes;
@@ -21,12 +29,12 @@ struct TransferRecord {
 	unsigned int BitsPerSecond;
 	unsigned int PacketsPerSecond;
 	unsigned int Packets;
-	unsigned int IpSource;
-	unsigned int IpDestination;
+	std::string IpSource;
+	std::string IpDestination;
 	unsigned int PortSource;
 	unsigned int PortDestination;
-	unsigned int StartTime;
-	unsigned int EndTime;
+	std::string StartTime;
+	std::string EndTime;
 	unsigned int Duration;
 	unsigned int DnsQuestionCount;
 	unsigned int CountrySource;
@@ -40,6 +48,11 @@ private: // this is just for information all members of classes are private by d
 	{
 		// the handling here needs to be improved for case the value cannot be converted to integer
 		return std::stoi(value);
+	}
+	std::string stringToIp(std::string value)
+	{
+		// the handling here needs to be improved for case the value cannot be converted to IP
+		return value;
 	}
 
 	void parseHeader(std::istream& inData)
@@ -57,7 +70,7 @@ private: // this is just for information all members of classes are private by d
 		TransferRecord row;
 		unsigned int colIdx{ TransferRecord::ColumnIndexes::enBYTES };
 
-		while (std::getline(inLine, cell, ','))
+		while (std::getline(inLine, cell, ';'))
 		{
 			TransferRecord::ColumnIndexes enColumns = static_cast<TransferRecord::ColumnIndexes>(colIdx);
 
@@ -85,20 +98,60 @@ private: // this is just for information all members of classes are private by d
 			}
 			case TransferRecord::ColumnIndexes::enIP_SOURCE:
 			{
-				row.IpSource = stringToInteger(cell);
+				row.IpSource = stringToIp(cell);
 				break;
 			}
 			case TransferRecord::ColumnIndexes::enIP_DESTINATION:
 			{
-				row.IpDestination = stringToInteger(cell);
+				row.IpDestination = stringToIp(cell);
 				break;
 			}
-			// the swtich needs to be extended by other columns
+			case TransferRecord::ColumnIndexes::enPORT_SOURCE:
+			{
+				row.PortSource = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enPORT_DESTINATION:
+			{
+				row.PortDestination = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enSTART_TIME:
+			{
+				row.StartTime = cell;
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enEND_TIME:
+			{
+				row.EndTime = cell;
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enDURATION:
+			{
+				row.Duration = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enDNS:
+			{
+				row.DnsQuestionCount = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enSOURCE_COUNTRY:
+			{
+				row.CountrySource = stringToInteger(cell);
+				break;
+			}
+			case TransferRecord::ColumnIndexes::enDESTINATION_COUNTRY:
+			{
+				row.CountryDestination = stringToInteger(cell);
+				break;
+			}
 			default:
 			{
-				std::cout << "The amount of columns does not fit the data structure" << std::endl;
+				std::cout << "Column does not fit the schema" << std::endl;
 			}
 			}
+			colIdx++;
 		}
 		return row;
 	}
